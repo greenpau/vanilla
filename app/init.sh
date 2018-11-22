@@ -5,7 +5,14 @@ set -e
 [ "$DEBUG" == 'true' ] && set -x
 
 if [ -z ${SSHD_PORT+x} ]; then SSHD_PORT="2222"; fi
-if [ -z ${CADDY_PORT+x} ]; then CADDY_PORT="2280"; fi
+
+if [ -z ${NOMAD_PORT_caddy+x} ]; then
+  if [ -z ${CADDY_PORT+x} ]; then
+    CADDY_PORT="2280"
+  fi
+else
+  CADDY_PORT=${NOMAD_PORT_caddy}
+fi
 
 IFNAME=$(cat /proc/net/route | cut -f1,2 | grep 00000000 | cut -f1)
 IPV4=$(ip addr show dev $IFNAME | grep "inet " | sed "s/.*inet //" | cut -d"/" -f1)
@@ -26,6 +33,11 @@ chmod 600 /etc/ssh/*key
 mkdir -p /etc/caddy
 cat << EOF > /etc/caddy/Caddyfile
 *:${CADDY_PORT} {
+    root /var/lib/caddy
+    index index.html
+    tls off
+}
+*:80 {
     root /var/lib/caddy
     index index.html
     tls off
